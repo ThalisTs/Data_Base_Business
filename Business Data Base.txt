@@ -1,0 +1,1141 @@
+DROP DATABASE IF EXISTS businessdb;
+
+CREATE DATABASE businessdb;
+USE businessdb;
+
+CREATE TABLE log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    table_name VARCHAR(50) NOT NULL,
+    change_time DATETIME NOT NULL,
+    username VARCHAR(30) NOT NULL,
+	change_date DATE NOT NULL
+);
+
+CREATE TABLE dba (
+    dba_username VARCHAR(30) PRIMARY KEY,
+    start_date DATE NOT NULL,
+    end_date DATE
+);
+
+CREATE TABLE etaireia(
+    AFM CHAR(9)  NOT NULL,
+    DOY VARCHAR(30) DEFAULT 'unknown' NOT NULL,
+    name VARCHAR(35) NOT NULL,
+    tel VARCHAR(10) DEFAULT 'unknown',
+    street VARCHAR(30) DEFAULT 'unknown',
+    num INT(15) NOT NULL,
+    city VARCHAR(45) DEFAULT 'unknown' NOT NULL,
+    country VARCHAR(15) DEFAULT 'unknown' NOT NULL,
+    PRIMARY KEY(AFM)
+);
+CREATE TABLE user(
+    username VARCHAR(30) NOT NULL,
+    password VARCHAR(20) NOT NULL,
+    name VARCHAR(25) NOT NULL,
+    lastname VARCHAR(35) NOT NULL,
+    regdate DATETIME NOT NULL,
+    email VARCHAR(30) DEFAULT 'unknown' NOT NULL,
+    PRIMARY KEY(username)
+);
+CREATE TABLE evaluator(
+    username VARCHAR(30) NOT NULL,
+    exp_years TINYINT(4) NOT NULL,
+    firm CHAR(9) NOT NULL,
+    PRIMARY KEY(username),
+    CONSTRAINT WORKSFOR FOREIGN KEY (firm) REFERENCES etaireia(AFM)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT ISEVALUATOR FOREIGN KEY (username) REFERENCES user(username)
+    ON DELETE CASCADE ON UPDATE CASCADE
+); 
+CREATE TABLE job(
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    start_date DATE NOT NULL,
+    salary FLOAT(20) NOT NULL,
+    position VARCHAR(60) NOT NULL,
+    edra VARCHAR(60) NOT NULL,
+    evaluator VARCHAR(30) NOT NULL,
+    announce_date DATETIME NOT NULL,
+    submission_date DATE NOT NULL,
+    PRIMARY KEY(id),
+    CONSTRAINT JOBEVAL FOREIGN KEY(evaluator) REFERENCES evaluator(username)
+    ON DELETE CASCADE ON UPDATE CASCADE 
+);
+CREATE TABLE subject(
+    title VARCHAR(36) NOT NULL,
+    descr TINYTEXT,
+    belongs_to VARCHAR(36) NOT NULL,
+    PRIMARY KEY(title),
+    CONSTRAINT SUBCTGORY FOREIGN KEY(belongs_to) REFERENCES subject(title)  
+    ON DELETE CASCADE ON UPDATE NO ACTION
+);
+CREATE TABLE requires(
+    job_id INT(11) NOT NULL,
+    subject_title VARCHAR(36) NOT NULL,
+    PRIMARY KEY(subject_title, job_id),
+    CONSTRAINT JOBREQ FOREIGN KEY(job_id) REFERENCES job(id),
+    CONSTRAINT SUBJECTRQRS FOREIGN KEY(subject_title) REFERENCES subject(title)
+    ON DELETE CASCADE ON UPDATE CASCADE 
+);
+CREATE TABLE employee(
+    username VARCHAR(30) DEFAULT 'unknown' NOT NULL,
+    bio TEXT NOT NULL,
+    sistatikes VARCHAR(35) DEFAULT 'none',
+    certificates VARCHAR(35) DEFAULT 'none',
+    PRIMARY KEY(username),
+    CONSTRAINT EMPLOYEE FOREIGN KEY(username) REFERENCES user(username)
+    ON DELETE CASCADE ON UPDATE CASCADE
+
+);
+CREATE TABLE applies(
+    cand_username VARCHAR(30) DEFAULT 'unknown',
+    job_id INT(11) NOT NULL,
+    PRIMARY KEY(cand_username, job_id),
+    CONSTRAINT APPLICATION FOREIGN KEY(job_id) REFERENCES job(id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT APLLS FOREIGN KEY(cand_username) REFERENCES employee(username)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE project(
+    candid VARCHAR(30) DEFAULT 'unknown' NOT NULL,
+    num TINYINT(4),
+    descr LONGTEXT,
+    url VARCHAR(60) DEFAULT '-',
+    PRIMARY KEY(candid,num),
+    CONSTRAINT HASPROJECTS FOREIGN KEY(candid) REFERENCES employee(username)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE languages(
+    candid VARCHAR(30) DEFAULT 'unknown' NOT NULL,
+    lang ENUM ('EN','FR','SP','GE','CH','GR'),
+    PRIMARY KEY(candid, lang),
+    CONSTRAINT KNOWSLANG FOREIGN KEY(candid) REFERENCES employee(username)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE degree (
+    titlos VARCHAR(150) DEFAULT 'unknown' NOT NULL,
+    idryma VARCHAR(150) DEFAULT 'unknown' NOT NULL,
+    bathmida ENUM ('BSc','MSc','PhD'),
+    PRIMARY KEY(titlos, idryma)
+);
+CREATE TABLE has_degree (
+    degr_title VARCHAR(150) DEFAULT 'unknown' NOT NULL,
+    degr_idryma VARCHAR(150) DEFAULT 'unknown' NOT NULL,
+    cand_username VARCHAR(30),
+    etos YEAR(4),
+    grade DECIMAL(5,2) DEFAULT NULL,
+    PRIMARY KEY(cand_username, degr_title, degr_idryma),
+    CONSTRAINT HASDGR FOREIGN KEY(cand_username) REFERENCES employee(username)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT DEGTITLE FOREIGN KEY(degr_title, degr_idryma) REFERENCES degree(titlos, idryma)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE app_process(
+  job_id INT(11) NOT NULL,
+  emp_username VARCHAR(30),
+  eval1 VARCHAR(30),
+  eval2 VARCHAR(30),
+  gr1 TINYINT,
+  gr2 TINYINT,
+  gr_sum TINYINT,
+  winner VARCHAR(30),
+  application_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(job_id,emp_username),
+  CONSTRAINT PRCS FOREIGN KEY (job_id, emp_username) REFERENCES applies(job_id, cand_username),
+  CONSTRAINT EVAL1 FOREIGN KEY (eval1) REFERENCES job(evaluator)
+  ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT EVAL2 FOREIGN KEY (eval2) REFERENCES job(evaluator)
+  ON DELETE CASCADE ON UPDATE CASCADE
+  );
+CREATE TABLE app_history(
+ID INT(11),
+evaluator1 VARCHAR(30),
+evaluator2 VARCHAR(30),
+employee VARCHAR(30),
+grade TINYINT,
+status ENUM('COMPLETED') NOT NULL DEFAULT 'COMPLETED',
+PRIMARY KEY(employee,ID)
+);
+  
+
+  
+  
+
+
+-- INSERTS GIA ETAIREIA
+INSERT INTO etaireia (AFM, DOY, name, tel, street, num, city, country)
+VALUES
+  ('123456789', 'A', 'Stark Industries', '1234567890', 'Main Street', 42, 'New York', 'USA'),
+  ('987654321', 'B', 'Wayne Enterprises', '9876543210', 'Gotham Street', 7, 'Gotham City', 'USA'),
+  ('555555555', 'B', 'Dunder Mifflin', '5555555555', 'Scranton Avenue', 123, 'Scranton', 'USA'),
+  ('111222333', 'C', 'Acme Corporation', '1111222333', 'Cartoon Lane', 88, 'Toon Town', 'Tooniverse'),
+  ('444444444', 'D', 'Umbrella Corporation', '4444444444', 'Raccoon Street', 13, 'Raccoon City', 'USA'),
+  ('666666666', 'A', 'Monsters, Inc.', '6666666666', 'Scare Street', 2319, 'Monstropolis', 'Monstropolis'),
+  ('777777777', 'E', 'Bluth Company', '7777777777', 'Banana Avenue', 1, 'Newport Beach', 'USA'),
+  ('888888888', 'D', 'Blue Sun Corporation', '8888888888', 'Serenity Lane',  42, 'Firefly', 'Verse'),
+  ('999999999', 'C', 'Weyland-Yutani', '9999999999', 'LV-426', 11, 'Nostromo', 'Outer Space');
+  
+-- INSERTS GIA USER
+INSERT INTO user (username, password, name, lastname, regdate, email)
+VALUES
+  ('JohnDoe', 'pass123', 'John', 'Doe', '2023-01-01 08:30:00', 'john.doe@gmail.com'),
+  ('JaneDoe', 'secret456', 'Jane', 'Doe', '2023-01-02 11:15:00', 'jane.doe@gmail.com'),
+  ('TonyStark', 'ironman', 'Tony', 'Stark', '2023-01-03 14:45:00', 'tony.stark@gmail.com'),
+  ('BruceWayne', 'batman123', 'Bruce', 'Wayne', '2023-01-04 10:20:00', 'bruce.wayne@gmail.com'),
+  ('MichaelScott', 'worldsbestboss', 'Michael', 'Scott', '2023-01-05 13:55:00', 'michael.scott@gmail.com'),
+  ('DwightSchrute', 'beetfarmer', 'Dwight', 'Schrute', '2023-01-06 09:40:00', 'dwight.schrute@gmail.com'),
+  ('WileECoyote', 'roadrunner', 'Wile E.', 'Coyote', '2023-01-07 12:25:00', 'wile.e.coyote@gmail.com'),
+  ('GeorgeBluth', 'nevernude', 'George', 'Bluth', '2023-01-08 15:10:00', 'george.bluth@gmail.com'),
+  ('MalcolmReynolds', 'serenity', 'Malcolm', 'Reynolds', '2023-01-09 07:50:00', 'malcolm.reynolds@gmail.com'),
+  ('ElonMusk', 'spacex', 'Elon', 'Musk', '2023-01-10 16:30:00', 'elon.musk@gmail.com'),
+  ('HomerSimpson', 'doh123', 'Homer', 'Simpson', '2023-01-11 19:15:00', 'homer.simpson@gmail.com'),
+  ('LizLemon', '30rock', 'Liz', 'Lemon', '2023-01-12 22:05:00', 'liz.lemon@gmail.com'),
+  ('JonSnow', 'winteriscoming', 'Jon', 'Snow', '2023-01-13 01:40:00', 'jon.snow@gmail.com'),
+  ('DaenerysTargaryen', 'dracarys', 'Daenerys', 'Targaryen', '2023-01-14 04:20:00', 'daenerys.targaryen@gmail.com'),
+  ('WalterWhite', 'heisenberg', 'Walter', 'White', '2023-01-15 17:00:00', 'walter.white@gmail.com'),
+  ('JessePinkman', 'yo123', 'Jesse', 'Pinkman', '2023-01-16 09:35:00', 'jesse.pinkman@gmail.com'),
+  ('LaraCroft', 'tombraider', 'Lara', 'Croft', '2023-01-17 12:10:00', 'lara.croft@gmail.com'),
+  ('JackSparrow', 'pirate123', 'Jack', 'Sparrow', '2023-01-18 14:55:00', 'jack.sparrow@gmail.com'),
+  ('SherlockHolmes', 'elementary', 'Sherlock', 'Holmes', '2023-01-19 17:35:00', 'sherlock.holmes@gmail.com'),
+  ('MargeSimpson', 'bluehair', 'Marge', 'Simpson', '2023-01-20 20:20:00', 'marge.simpson@gmail.com'),
+  ('TonyMontana', 'scarface', 'Tony', 'Montana', '2023-01-21 23:00:00', 'tony.montana@gmail.com'),
+  ('MartyMcFly', 'fluxcapacitor', 'Marty', 'McFly', '2023-01-22 01:40:00', 'marty.mcfly@gmail.com'),
+  ('FrodoBaggins', 'onering', 'Frodo', 'Baggins', '2023-01-23 04:25:00', 'frodo.baggins@gmail.com'),
+  ('HannibalLecter', 'silenceofthelambs', 'Hannibal', 'Lecter', '2023-01-24 07:05:00', 'hannibal.lecter@gmail.com'),
+  ('ElsaFrozen', 'letitgo', 'Elsa', 'Frozen', '2023-01-25 09:50:00', 'elsa.frozen@gmail.com'),
+  ('JamesBond', '007agent', 'James', 'Bond', '2023-01-26 12:30:00', 'james.bond@gmail.com'),
+  ('WonderWoman', 'lassooftruth', 'Diana', 'Prince', '2023-01-27 15:15:00', 'diana.prince@gmail.com'),
+  ('HarryPotter', 'wizard123', 'Harry', 'Potter', '2023-01-28 18:00:00', 'harry.potter@gmail.com'),
+  ('KatnissEverdeen', 'mockingjay', 'Katniss', 'Everdeen', '2023-01-29 20:40:00', 'katniss.everdeen@gmail.com'),
+  ('DarthVader', 'darkside', 'Darth', 'Vader', '2023-01-30 23:20:00', 'darth.vader@gmail.com'),
+  ('CaptainAmerica', 'captain123', 'Steve', 'Rogers', '2023-01-31 02:00:00', 'captain.america@gmail.com'),
+  ('HermioneGranger', 'granger123', 'Hermione', 'Granger', '2023-02-01 04:40:00', 'hermione.granger@gmail.com'),
+  ('SpiderMan', 'webcrawler', 'Peter', 'Parker', '2023-02-02 07:20:00', 'peter.parker@gmail.com'),
+  ('BlackWidow', 'avenger', 'Natasha', 'Romanoff', '2023-02-03 10:00:00', 'natasha.romanoff@gmail.com'),
+  ('JackBauer', '24hours', 'Jack', 'Bauer', '2023-02-04 12:40:00', 'jack.bauer@gmail.com'),
+  ('JosephCooper','stay','Joseph', 'Cooper','2023-03-05 10:40:00', 'josephcooper@gmail.com');
+
+-- INSERTS GIA EVALUATOR
+INSERT INTO evaluator(username,exp_years,firm)
+VALUES 
+('JohnDoe', 1, '123456789'),
+('JaneDoe', 5, '123456789'),
+('TonyStark', 3, '987654321'),
+('BruceWayne', 4, '987654321'),
+('MichaelScott', 1, '555555555'),
+('DwightSchrute', 7, '555555555'),
+('WileECoyote', 8, '111222333'),
+('GeorgeBluth', 1, '111222333'),
+('MalcolmReynolds', 2, '444444444'),
+('ElonMusk', 4, '444444444'),
+('HomerSimpson', 6, '666666666'),
+('LizLemon', 3, '666666666'),
+('JonSnow', 1, '777777777'),
+('DaenerysTargaryen', 3, '777777777'),
+('WalterWhite', 4, '888888888'),
+('JessePinkman', 4, '888888888'),
+('LaraCroft', 6, '999999999'),
+('JackSparrow', 8, '999999999');
+
+
+-- INSERTS GIA JOB
+INSERT INTO job (id ,start_date, salary, position, edra, evaluator, announce_date, submission_date)
+VALUES
+  (1000000000,'2023-01-10', 60000.00, 'Software Engineer', 'San Francisco', 'JohnDoe', '2023-08-15 10:00:00', '2023-09-15'),
+  (1000000001,'2024-04-15', 75000.00, 'Data Scientist', 'New York', 'JaneDoe', '2023-08-20 11:30:00', '2023-09-20'),
+  (1000000002,'2024-01-25', 50000.00, 'Marketing Specialist', 'Los Angeles', 'TonyStark', '2023-08-25 12:45:00', '2023-09-25'),
+  (1000000003,'2024-02-10', 80000.00, 'Senior Developer', 'London', 'BruceWayne', '2023-08-30 14:15:00', '2023-09-30'),
+  (1000000004,'2024-01-20', 70000.00, 'Financial Analyst', 'Paris', 'MichaelScott', '2023-09-05 15:30:00', '2023-10-05'),
+  (1000000005,'2024-01-30', 55000.00, 'HR Manager', 'Berlin', 'DwightSchrute', '2023-09-10 16:45:00', '2023-10-10'),
+  (1000000006,'2024-02-05', 90000.00, 'UX/UI Designer', 'Tokyo', 'WileECoyote', '2023-09-15 18:00:00', '2023-10-15'),
+  (1000000007,'2024-01-15', 60000.00, 'Business Analyst', 'Sydney', 'GeorgeBluth', '2023-09-20 19:15:00', '2023-10-20'),
+  (1000000008,'2024-02-01', 75000.00, 'Software Developer', 'New York', 'MalcolmReynolds', '2023-09-25 20:30:00', '2023-10-25'),
+  (1000000009,'2024-01-25', 50000.00, 'Marketing Manager', 'Los Angeles', 'ElonMusk', '2023-09-30 22:00:00', '2023-10-30'),
+  (1000000010,'2024-02-10', 80000.00, 'Product Manager', 'London', 'HomerSimpson', '2023-10-05 23:15:00', '2023-11-05'),
+  (1000000011,'2024-01-20', 70000.00, 'Financial Planner', 'Paris', 'LizLemon', '2023-10-10 00:30:00', '2023-11-10'),
+  (1000000012,'2024-01-30', 55000.00, 'Sales Representative', 'Berlin', 'JonSnow', '2023-10-15 01:45:00', '2023-11-15'),
+  (1000000013,'2024-02-05', 90000.00, 'Network Engineer', 'Tokyo', 'DaenerysTargaryen', '2023-10-20 03:15:00', '2023-11-20'),
+  (1000000014,'2024-01-15', 60000.00, 'Quality Assurance Analyst', 'Sydney', 'WalterWhite', '2023-10-25 04:30:00', '2023-11-25'),
+  (1000000015,'2024-02-01', 75000.00, 'Project Manager', 'New York', 'JessePinkman', '2023-10-30 05:45:00', '2023-11-30'),
+  (1000000016,'2024-01-25', 50000.00, 'Graphic Designer', 'Los Angeles', 'LaraCroft', '2023-11-05 07:00:00', '2023-12-05'),
+  (1000000017,'2024-02-10', 80000.00, 'IT Specialist', 'London', 'JackSparrow', '2023-11-10 08:15:00', '2023-12-10'),
+  (1000000018,'2024-01-20', 70000.00, 'Customer Support Representative', 'Paris', 'JackSparrow', '2023-11-15 09:30:00', '2023-12-15'),
+  (1000000019,'2024-01-30', 55000.00, 'Operations Manager', 'Berlin', 'ElonMusk', '2023-11-20 10:45:00', '2023-12-20'),
+  (1000000020,'2025-02-05', 90000.00, 'Systems Analyst', 'Tokyo', 'BruceWayne', '2023-11-25 12:15:00', '2023-12-25'),
+  (1000000021,'2025-01-15', 60000.00, 'Legal Advisor', 'Sydney', 'GeorgeBluth', '2023-11-30 13:30:00', '2024-01-01'),
+  (1000000022,'2025-02-01', 75000.00, 'Research Scientist', 'New York', 'LizLemon', '2023-12-05 14:45:00', '2024-01-05');
+
+
+
+-- INSERTS GIA SUBJECT
+INSERT INTO subject (title, descr, belongs_to)
+VALUES 
+  ('Computer Science', 'Study of computers and computational systems', 'Computer Science'),
+  ('Statistics', 'Analysis of data and statistical models', 'Statistics'),
+  ('Marketing', 'Promotion and selling of products or services', 'Marketing'),
+  ('Software Development', 'Process of designing and building software', 'Software Development'),
+  ('Finance', 'Management of money and financial decisions', 'Finance'),
+  ('Human Resources', 'Management of personnel in an organization', 'Human Resources'),
+  ('UX/UI Design', 'User experience and user interface design', 'UX/UI Design'),
+  ('Business Analysis', 'Evaluation and identification of business needs', 'Business Analysis'),
+  ('Software Engineering', 'Development of software applications', 'Software Engineering'),
+  ('Marketing Management', 'Planning and overseeing marketing strategies', 'Marketing Management'),
+  ('Product Management', 'Planning and development of products', 'Product Management'),
+  ('Finance Management', 'Planning and overseeing financial activities', 'Finance Management'),
+  ('Sales', 'Selling products or services to customers', 'Sales'),
+  ('Network Engineering', 'Design and maintenance of computer networks', 'Network Engineering'),
+  ('Quality Assurance', 'Ensuring quality in products or services', 'Quality Assurance'),
+  ('Project Management', 'Planning and execution of projects', 'Project Management'),
+  ('Graphic Design', 'Creation of visual content and graphics', 'Graphic Design'),
+  ('IT Specialist', 'Management and support of IT systems', 'IT Specialist'),
+  ('Customer Support', 'Assisting customers with product or service inquiries', 'Customer Support'),
+  ('Operations Management', 'Planning and overseeing day-to-day operations', 'Operations Management'),
+  ('Systems Analysis', 'Analysis and design of computer systems', 'Systems Analysis'),
+  ('Legal Advising', 'Providing legal advice and guidance', 'Legal Advising'),
+  ('Research', 'Investigation and study of a particular subject', 'Research');
+  
+  -- INSERTS GIA REQUIRES
+INSERT INTO requires (job_id, subject_title)
+VALUES 
+  ('1000000000', 'Computer Science'),
+  ('1000000001', 'Statistics'),
+  ('1000000002', 'Marketing'),
+  ('1000000003', 'Software Development'),
+  ('1000000004', 'Finance'),
+  ('1000000005', 'Human Resources'),
+  ('1000000006', 'UX/UI Design'),
+  ('1000000007', 'Business Analysis'),
+  ('1000000008', 'Software Engineering'),
+  ('1000000009', 'Marketing Management'),
+  ('1000000010', 'Product Management'),
+  ('1000000011', 'Finance Management'),
+  ('1000000012', 'Sales'),
+  ('1000000013', 'Network Engineering'),
+  ('1000000014', 'Quality Assurance'),
+  ('1000000015', 'Project Management'),
+  ('1000000016', 'Graphic Design'),
+  ('1000000017', 'IT Specialist'),
+  ('1000000018', 'Customer Support'),
+  ('1000000019', 'Operations Management'),
+  ('1000000020', 'Systems Analysis'),
+  ('1000000021', 'Legal Advising'),
+  ('1000000022', 'Research');
+
+-- INSERTS GIA EMPLOYEE
+INSERT INTO employee (username, bio, sistatikes, certificates)
+VALUES 
+  ('SherlockHolmes', 'Experienced software engineer proficient in multiple languages.', 'Baker Street IT', 'Bsc in cs, Msc in SE'),
+  ('MargeSimpson', 'Creative graphic designer specializing in captivating designs.', 'Springfield Art', 'Bsc in GD, Msc in VA'),
+  ('TonyMontana', 'Strategic business manager excelling in financial analysis and project management.', 'Montana Enterprises', 'Bsc in BA, Msc in Finance'),
+  ('MartyMcFly', 'Innovative electrical engineer with experience in cutting-edge electronic systems.', 'Hill Valley Tech', 'Bsc in EE, Msc in Electronics'),
+  ('FrodoBaggins', 'Analytical data analyst skilled in statistical analysis and data visualization.', 'Shire Analytics', 'Bsc in DS, Msc in Analytics'),
+  ('HannibalLecter', 'Legal advisor specializing in criminal law and litigation.', 'Lecter Law Firm', 'BsC in Law, PhD in Criminal Law'),
+  ('ElsaFrozen', 'Creative ice sculptor known for enchanting displays.', 'Arendelle Artistry', 'Bsc in Fine Arts'),
+  ('JamesBond', 'Security consultant with extensive experience in covert operations and risk assessment.', 'MI6 Security', 'Bsc in Security Management'),
+  ('WonderWoman', 'UX/UI designer adept at translating user needs into innovative designs.', 'Themyscira Design', 'Bsc in UX Design, Msc in ID'),
+  ('HarryPotter', 'Wizardry enthusiast applying mathimatical knowledge to solve problems.', 'Hogwarts School', 'PhD in Maths'),
+  ('KatnissEverdeen', 'Strategic consultant skilled software develompent', 'Everdeen Consulting', 'Bsc in CS, Msc SD'),
+  ('DarthVader', 'IT specialist focusing on systems analysis and cybernetic enhancements.', 'Galactic Tech', 'Bsc in CS, Phd in Cybernetics'),
+  ('CaptainAmerica', 'Project manager with enhanced leadership skills.', 'Avengers Project', 'Bsc in Project Management'),
+  ('HermioneGranger', 'Legal advisor with expertise criminal law', 'Granger & Weasley Legal', 'Bsc in Law'),
+  ('SpiderMan', 'Web development specialist designing and maintaining web applications.', 'Web Slinger Solutions', 'Bsc in Web Development'),
+  ('BlackWidow', 'Intelligence analyst providing critical insights for strategic decision-making.', 'Red Room Analytics', 'Msc in Intel Studies'),
+  ('JackBauer', 'Crisis management consultant with a background in counter-terrorism.', 'Bauer Crisis Solutions', 'Bsc in Crisis Mgmt'),
+  ('JosephCooper', 'Astrophysicist pushing the boundaries of human understanding of the cosmos.', 'NASA Astrophysics', 'Bsc in Physics, Phd in Astrophysics');
+
+
+
+
+-- INSERTS GIA APPLIES
+INSERT INTO applies (cand_username, job_id)
+VALUES
+('JosephCooper', 1000000022),
+('JackBauer', 1000000021),
+('BlackWidow', 1000000020),
+('SpiderMan', 1000000019),
+('HermioneGranger', 1000000018),
+('CaptainAmerica', 1000000017),
+('DarthVader', 1000000016),
+('KatnissEverdeen', 1000000015),
+('HarryPotter', 1000000014),
+('WonderWoman', 1000000013),
+('JamesBond', 1000000012),
+('ElsaFrozen', 1000000011),
+('HannibalLecter', 1000000010),
+('FrodoBaggins', 1000000009),
+('MartyMcFly', 1000000008),
+('TonyMontana', 1000000007),
+('MargeSimpson', 1000000006),
+('SherlockHolmes', 1000000005);
+
+
+-- INSERTS GIA PROJECT
+INSERT INTO project (candid, num, descr, url)
+VALUES
+  ('SherlockHolmes', 1, 'Developed a secure messaging application for confidential communication.', 'https://github.com/sherlock/chat-app'),
+  ('SherlockHolmes', 2, 'Implemented a real-time data analytics system for business insights.', 'https://github.com/sherlock/analytics-system'),
+  ('MargeSimpson', 3, 'Created visually stunning graphics for a high-profile advertising campaign.', 'https://margesdesigns.com/campaign'),
+  ('MargeSimpson', 4, 'Designed engaging social media content for brand promotion.', 'https://margesdesigns.com/social-media'),
+  ('TonyMontana', 5, 'Led a team in a successful business expansion project, doubling profits in one year.', 'https://montanaenterprises.com/expansion'),
+  ('TonyMontana', 6, 'Optimized financial processes to improve efficiency and reduce costs.', 'https://montanaenterprises.com/financial-optimization'),
+  ('MartyMcFly', 7, 'Engineered a futuristic smart home system that responds to voice commands.', 'https://hillvalleytech.com/smart-home'),
+  ('FrodoBaggins', 8, 'Conducted data analysis to optimize supply chain operations in the Shire.', 'https://shireanalytics.com/supply-chain'),
+  ('FrodoBaggins', 9, 'Implemented a predictive analytics model for inventory management.', 'https://shireanalytics.com/predictive-analytics'),
+  ('HannibalLecter', 10, 'Provided legal counsel for high-profile criminal cases, achieving successful verdicts.', 'https://lecterlaw.com/cases'),
+  ('HannibalLecter', 11, 'Negotiated complex business contracts to ensure legal compliance.', 'https://lecterlaw.com/business-contracts'),
+  ('ElsaFrozen', 12, 'Showcased ice sculptures at multiple art exhibitions, receiving critical acclaim.', 'https://arendelleartistry.com/exhibitions'),
+  ('JamesBond', 13, 'Implemented advanced security measures to safeguard classified information.', 'https://mi6security.com/classified-info'),
+  ('WonderWoman', 14, 'Revamped user interface designs, resulting in a 20% increase in user engagement.', 'https://themyscira.design/ui-revamp'),
+  ('HarryPotter', 15, 'Applied magical algorithms to solve complex mathematical problems.', 'https://hogwarts.com/magical-maths'),
+  ('HarryPotter', 16, 'Researched and published papers on the magical properties of mathematical concepts.', 'https://hogwarts.com/magical-maths-research'),
+  ('KatnissEverdeen', 17, 'Collaborated on software development for a revolutionary mobile app.', 'https://everdeenconsulting.com/mobile-app'),
+  ('DarthVader', 18, 'Analyzed and enhanced cybernetic systems for improved efficiency and security.', 'https://galactictech.com/cybernetics'),
+  ('CaptainAmerica', 19, 'Successfully managed a project to upgrade Avengers headquarters infrastructure.', 'https://avengersproject.com/upgrade'),
+  ('HermioneGranger', 20, 'Provided legal guidance on high-profile criminal cases, ensuring fair trials.', 'https://grangerandweasley.com/legal-cases'),
+  ('SpiderMan', 21, 'Developed and maintained dynamic websites for various clients.', 'https://webslingersolutions.com/dynamic-websites'),
+  ('BlackWidow', 22, 'Conducted intelligence analysis to support strategic decision-making in critical operations.', 'https://redroomanalytics.com/intel-analysis'),
+  ('BlackWidow', 23, 'Developed a secure communication platform for covert operations.', 'https://redroomanalytics.com/secure-communication'),
+  ('JackBauer', 24, 'Managed crisis situations and provided expert advice in counter-terrorism operations.', 'https://bauercrisis.com/counter-terrorism'),
+  ('JosephCooper', 25, 'Contributed to groundbreaking astrophysics research on the nature of black holes.', 'https://nasaastrophysics.com/black-hole-study');
+
+-- INSERTS GIA LANGUAGES
+INSERT INTO languages (candid, lang) VALUES
+  ('SherlockHolmes', 'EN'),
+  ('SherlockHolmes', 'FR'),
+  ('MargeSimpson', 'SP'),
+  ('TonyMontana', 'EN'),
+  ('MartyMcFly', 'GE'),
+  ('MartyMcFly', 'CH'),
+  ('FrodoBaggins', 'GR'),
+  ('HannibalLecter', 'EN'),
+  ('ElsaFrozen', 'FR'),
+  ('JamesBond', 'SP'),
+  ('WonderWoman', 'GE'),
+  ('WonderWoman', 'CH'),
+  ('HarryPotter', 'GR'),
+  ('KatnissEverdeen', 'EN'),
+  ('DarthVader', 'FR'),
+  ('CaptainAmerica', 'SP'),
+  ('HermioneGranger', 'GE'),
+  ('HermioneGranger', 'CH'),
+  ('SpiderMan', 'GR'),
+  ('BlackWidow', 'EN'),
+  ('JackBauer', 'FR'),
+  ('JosephCooper', 'SP');
+  
+  -- INSERTS GIA DEGREE
+INSERT INTO degree (titlos, idryma, bathmida) VALUES
+  ('Bsc in Computer Engineering', 'MIT', 'BSc'),
+  ('Msc in Software Engineering', 'MIT', 'MSc'),
+  ('Bsc in Graphic Design', 'Parsons School of Design', 'BSc'),
+  ('Msc in Visual Arts', 'Parsons School of Design', 'MSc'),
+  ('Bsc in Business Administration', 'Harvard Business School', 'BSc'),
+  ('Msc in Finance', 'Wharton School of Business', 'MSc'),
+  ('Bsc in Electrical Engineering', 'Stanford University', 'BSc'),
+  ('Msc in Electronics', 'Stanford University', 'MSc'),
+  ('Bsc in Data Science', 'University of California, Berkeley', 'BSc'),
+  ('Msc in Analytics', 'University of California, Berkeley', 'MSc'),
+  ('BsC in Law', 'Harvard Law School', 'BSc'),
+  ('PhD in Criminal Law', 'Harvard Law School', 'PhD'),
+  ('Bsc in Fine Arts', 'Royal College of Art', 'BSc'),
+  ('Bsc in Security Management', 'Georgetown University', 'BSc'),
+  ('Bsc in UX Design', 'Rhode Island School of Design', 'BSc'),
+  ('Msc in Interaction Design', 'Rhode Island School of Design', 'MSc'),
+  ('PhD in Mathematics', 'University of Cambridge', 'PhD'),
+  ('Bsc in Computer Science', 'MIT', 'BSc'),
+  ('Msc in Software Development', 'MIT', 'MSc'),
+  ('Bsc in Computer Science', 'California Institute of Technology', 'BSc'),
+  ('Phd in Cybernetics', 'California Institute of Technology', 'PhD'),
+  ('Bsc in Project Management', 'Harvard Business School', 'BSc'),
+  ('Bsc in Law', 'Yale Law School', 'BSc'),
+  ('Bsc in Web Development', 'Full Sail University', 'BSc'),
+  ('Msc in Intelligence Studies', 'Georgetown University', 'MSc');
+
+-- INSERTS GIA HAS_DEGREE
+INSERT INTO has_degree (degr_title, degr_idryma, cand_username, etos, grade) VALUES
+  ('Bsc in Computer Engineering', 'MIT', 'SherlockHolmes', 2020, 3.75),
+  ('Msc in Software Engineering', 'MIT', 'SherlockHolmes', 2022, 4.0),
+  ('Bsc in Graphic Design', 'Parsons School of Design', 'MargeSimpson', 2018, 3.9),
+  ('Msc in Visual Arts', 'Parsons School of Design', 'MargeSimpson', 2020, 4.2),
+  ('Bsc in Business Administration', 'Harvard Business School', 'TonyMontana', 2015, 3.8),
+  ('Msc in Finance', 'Wharton School of Business', 'TonyMontana', 2017, 4.1),
+  ('Bsc in Electrical Engineering', 'Stanford University', 'MartyMcFly', 2019, 3.7),
+  ('Msc in Electronics', 'Stanford University', 'MartyMcFly', 2021, 4.0),
+  ('Bsc in Data Science', 'University of California, Berkeley', 'FrodoBaggins', 2017, 3.9),
+  ('Msc in Analytics', 'University of California, Berkeley', 'FrodoBaggins', 2019, 4.2),
+  ('BsC in Law', 'Harvard Law School', 'HannibalLecter', 2014, 3.8),
+  ('PhD in Criminal Law', 'Harvard Law School', 'HannibalLecter', 2018, 4.0),
+  ('Bsc in Fine Arts', 'Royal College of Art', 'ElsaFrozen', 2016, 3.7),
+  ('Bsc in Security Management', 'Georgetown University', 'JamesBond', 2015, 3.9),
+  ('Bsc in UX Design', 'Rhode Island School of Design', 'WonderWoman', 2017, 4.1),
+  ('Msc in Interaction Design', 'Rhode Island School of Design', 'WonderWoman', 2019, 4.3),
+  ('PhD in Mathematics', 'University of Cambridge', 'HarryPotter', 2021, 4.2),
+  ('Bsc in Computer Science', 'MIT', 'KatnissEverdeen', 2016, 3.8),
+  ('Msc in Software Development', 'MIT', 'KatnissEverdeen', 2018, 4.0),
+  ('Bsc in Computer Science', 'California Institute of Technology', 'DarthVader', 2016, 3.9),
+  ('Phd in Cybernetics', 'California Institute of Technology', 'DarthVader', 2019, 4.1),
+  ('Bsc in Project Management', 'Harvard Business School', 'CaptainAmerica', 2015, 4.0),
+  ('Bsc in Law', 'Yale Law School', 'HermioneGranger', 2017, 3.9),
+  ('Bsc in Web Development', 'Full Sail University', 'SpiderMan', 2018, 4.2),
+  ('Msc in Intelligence Studies', 'Georgetown University', 'BlackWidow', 2019, 4.0);
+  
+  
+
+
+
+ALTER TABLE applies  -- BAZEI EDW TRIA STATUS. OI EGGRAFES PRIN APO AYTH THN GRAMMH, THA GINOYN OLES COMPLETED
+ADD COLUMN status ENUM('ACTIVE', 'CANCELED', 'COMPLETED') NOT NULL DEFAULT 'COMPLETED';
+
+ALTER TABLE applies  -- BAZEI EDW STO TABLE APPLIES TON XRONO POY MPHKE KATHE APPLICATION
+ADD COLUMN application_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+DELIMITER //
+
+
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_applies
+BEFORE INSERT ON applies
+FOR EACH ROW
+BEGIN
+    DECLARE app_start_date DATE;
+    DECLARE diff_days INT;
+    DECLARE num_active_apps INT;
+
+    -- Fetch the start_date for the corresponding job_id
+    SELECT start_date INTO app_start_date
+    FROM job
+    WHERE id = NEW.job_id;
+
+    -- Calculate the difference in days
+    SET diff_days = DATEDIFF(app_start_date, CURDATE());
+
+    IF NEW.status = 'CANCELED' AND diff_days < 10 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid start date for CANCELED status';
+    END IF;
+
+    IF NEW.status = 'ACTIVE' AND diff_days < 15 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid start date for ACTIVE status (must be 15 or more days in the past)';
+    END IF;
+
+    IF NEW.status = 'ACTIVE' THEN
+        -- Count the number of active applications for the same candidate
+        SELECT COUNT(DISTINCT job_id)
+        INTO num_active_apps
+        FROM applies
+        WHERE cand_username = NEW.cand_username AND status = 'ACTIVE';
+
+        IF num_active_apps >= 3 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Too many active applications for this candidate';
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+
+DELIMITER ;
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('SherlockHolmes', 1000000001, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('DarthVader', 1000000001, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('TonyMontana', 1000000001, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('JamesBond', 1000000002, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('WonderWoman', 1000000003, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('JosephCooper', 1000000004, 'ACTIVE');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('JamesBond', 1000000003, 'CANCELED');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('WonderWoman', 1000000004, 'CANCELED');
+INSERT INTO applies (cand_username, job_id, status)
+VALUES ('JosephCooper', 1000000005, 'CANCELED');
+
+
+
+INSERT INTO app_process(job_id,emp_username,application_time)
+  SELECT job_id, cand_username,application_time FROM applies
+  WHERE status='ACTIVE';
+  
+  
+
+UPDATE app_process 
+JOIN job  ON app_process.job_id = job.id
+JOIN evaluator e1 ON job.evaluator = e1.username
+JOIN evaluator e2 ON e1.firm = e2.firm AND e1.username <> e2.username
+SET app_process.eval1 = e1.username,
+    app_process.eval2 = e2.username;
+UPDATE app_process
+SET gr1 = CASE WHEN RAND() < 0.8 THEN 1+FLOOR(RAND() * 20) ELSE NULL END;
+UPDATE app_process
+SET gr2 = CASE WHEN RAND() < 0.8 THEN 1+FLOOR(RAND() * 20) ELSE NULL END;
+
+DELIMITER $
+
+
+CREATE PROCEDURE grade_calc(IN emplo VARCHAR(35), OUT total INT)
+BEGIN 
+DECLARE phdc INT;
+DECLARE mscc INT;
+DECLARE bscc INT;
+DECLARE lang INT;
+DECLARE proj INT;
+
+SELECT count(degr_title) INTO @phdc
+ FROM employee INNER JOIN has_degree ON employee.username=has_degree.cand_username
+WHERE employee.username=emplo AND degr_title LIKE "%Phd%" ;
+SELECT count(degr_title) INTO @mscc
+ FROM employee INNER JOIN has_degree ON employee.username=has_degree.cand_username
+WHERE employee.username=emplo AND degr_title LIKE "%Msc%" ;
+SELECT count(degr_title) INTO @bscc
+ FROM employee INNER JOIN has_degree ON employee.username=has_degree.cand_username
+WHERE employee.username=emplo AND degr_title LIKE "%Bsc%" ;
+
+SELECT count(candid) INTO @proj
+ FROM employee INNER JOIN project ON employee.username=project.candid
+WHERE employee.username=emplo;
+
+SELECT COUNT(DISTINCT candid) INTO @lang
+    FROM languages
+    WHERE candid = emplo;
+ SET lang = GREATEST(lang, 1);
+
+ SET total=3*@phdc+2*@mscc+@bscc+@proj+@lang;
+END$
+
+-- (STORED PROCEDURE 3.1.3.1.)
+-- PROCEDURE POY YPOLOGIZEI BATHMO. TREIS EKSODOI 1. O BATHMOS TOY EVALUATOR 
+-- 2. BATHMOS '0' AN O EVALUATOR DEN AKSIOLOGEI 
+-- 3. BATHMOS YPOLOGISMENOS APO TON PINAKA AN O EVALUATOR DEN EXEI BALEI BATHMO
+CREATE PROCEDURE bathmologish(IN eval VARCHAR(35), emplo VARCHAR(35), id INT(11),OUT X INT)
+ BEGIN 
+DECLARE is_evaluator1_present BOOLEAN;
+DECLARE is_evaluator2_present BOOLEAN;
+DECLARE gr_value INT;
+
+SELECT EXISTS (
+        SELECT 1
+        FROM app_process
+        WHERE job_id = id AND eval1 = eval
+    ) INTO is_evaluator1_present;
+SELECT EXISTS (
+        SELECT 1
+        FROM app_process
+        WHERE job_id = id AND eval2 = eval
+    ) INTO is_evaluator2_present;
+IF is_evaluator1_present THEN 
+    SELECT gr1 INTO gr_value
+    FROM app_process
+    WHERE job_id = id AND eval1 = eval AND emp_username = emplo;
+
+   IF gr_value IS  NULL THEN
+        CALL grade_calc(emplo, X);
+        SELECT 'Grade calculated by grade_calc for evaluator1' AS debug_message;
+	ELSE
+          SET X = gr_value;
+    END IF;
+ELSE
+    SET X = 0;
+END IF;
+IF is_evaluator2_present THEN 
+    SELECT gr2 INTO gr_value
+    FROM app_process
+    WHERE job_id = id AND eval2 = eval AND emp_username = emplo;
+
+    IF gr_value IS  NULL THEN
+     CALL grade_calc(emplo, X);
+        SELECT 'Grade calculated by grade_calc for evaluator2' AS debug_message;
+    ELSE
+          SET X = gr_value;
+    END IF;
+ELSE
+    SET X = 0;
+END IF;
+
+END$
+
+CREATE PROCEDURE winner(IN id INT(11))
+BEGIN
+    DECLARE app_id INT(11);
+    DECLARE username VARCHAR(30);
+    DECLARE fgrade INT;
+    DECLARE sgrade INT;
+    DECLARE X INT;
+    DECLARE sum INT;
+    DECLARE winnerusername VARCHAR(30);
+    DECLARE winnerSet INT DEFAULT 0;
+    DECLARE finishedFlag INT;
+    DECLARE grCursor CURSOR FOR
+     SELECT job_id,emp_username,gr1,gr2 FROM app_process WHERE job_id=id;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET finishedFlag=1;
+	OPEN grCursor;
+	SET finishedFlag=0;
+      REPEAT
+	    FETCH grCursor INTO app_id,username,fgrade,sgrade;
+	      IF (finishedFlag=0) THEN
+     
+            IF fgrade IS NULL THEN
+              CALL grade_calc(username, X);
+			  UPDATE app_process SET gr1 = X WHERE job_id = app_id AND emp_username = username;
+			END IF;
+    
+	        IF sgrade IS NULL THEN
+			  CALL grade_calc(username, X);
+              UPDATE app_process SET gr2 = X WHERE job_id = app_id AND emp_username = username;
+	        END IF;
+     
+			SET sum = (COALESCE(fgrade, 0) + COALESCE(sgrade, 0)) / 2;
+			UPDATE app_process SET gr_sum = sum WHERE job_id = app_id AND emp_username = username;
+	        SELECT emp_username
+            INTO winnerUsername
+            FROM app_process
+            WHERE job_id = app_id
+            ORDER BY gr_sum DESC, application_time ASC
+            LIMIT 1;
+			UPDATE app_process SET winner = winnerUsername WHERE job_id = app_id;
+		 END IF;
+        UNTIL finishedFlag=1
+     END REPEAT;
+ CLOSE grCursor;
+    
+END$
+
+CREATE PROCEDURE history_ins()
+BEGIN 
+   INSERT INTO app_history (ID, evaluator1, evaluator2, employee, grade, status)
+    SELECT job_id, eval1, eval2, emp_username, gr_sum, 'COMPLETED'
+    FROM app_process
+    WHERE eval1 IS NOT NULL AND eval2 IS NOT NULL AND gr_sum IS NOT NULL;
+	INSERT INTO app_history (ID, evaluator1, evaluator2, employee, grade, status)
+    SELECT job_id, '-', '-', cand_username, 0, 'COMPLETED'
+    FROM applies
+    WHERE status = 'CANCELED';
+    
+    DELETE 
+    FROM app_process
+    WHERE winner IS NOT NULL;
+END$
+
+DELIMITER ;
+
+-- 3.1.3.4
+DELIMITER //
+
+CREATE PROCEDURE getProcessByGradeRange(IN minGrade TINYINT, IN maxGrade TINYINT, OUT resultTable TEXT)
+BEGIN
+    SET @query = CONCAT('SELECT employee, ID FROM app_history WHERE grade BETWEEN ', minGrade, ' AND ', maxGrade);
+    PREPARE stmt FROM @query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END //
+
+DELIMITER ;
+
+ALTER TABLE app_history ADD INDEX in_grade(grade);
+SET @outputVariable = NULL;
+
+
+DELIMITER //
+
+CREATE PROCEDURE GetEmployeeAndJobFromHistory(
+    IN evaluator_name VARCHAR(30)
+)
+BEGIN
+    -- Declare variables to store the output
+    DECLARE employee_result_var VARCHAR(30);
+    DECLARE job_result_var INT;
+
+    -- Declare a cursor to iterate through the results
+    DECLARE done BOOLEAN DEFAULT FALSE;
+    DECLARE employee_id INT;
+    
+    -- Declare a cursor for the SELECT statement
+    DECLARE cur CURSOR FOR
+        SELECT ID, employee
+        FROM app_history
+        WHERE evaluator1 = evaluator_name OR evaluator2 = evaluator_name;
+
+    -- Declare continue handler to exit the loop
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Open the cursor
+    OPEN cur;
+
+    -- Start the loop
+    read_loop: LOOP
+        -- Fetch the next result
+        FETCH cur INTO employee_id, employee_result_var;
+
+        -- Exit the loop if no more results
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Display the result
+        SELECT 'Employee:', employee_result_var, 'Job ID:', employee_id;
+
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE cur;
+END //
+
+DELIMITER ;
+
+
+CREATE INDEX idx_evaluator1 ON app_history(evaluator1);
+CREATE INDEX idx_evaluator2 ON app_history(evaluator2);
+
+
+DELIMITER //
+
+CREATE PROCEDURE UpdateEmployeeJobStatus(
+    IN p_username VARCHAR(255),
+    IN p_job_id INT,
+    IN p_choice_letter CHAR(1)
+)
+BEGIN
+    DECLARE status_code INT;
+
+    -- Assign status code based on choice letter
+    CASE p_choice_letter
+        WHEN 'c' THEN
+            SET status_code = 1; -- Code for choice 'c'
+        WHEN 'a' THEN
+            SET status_code = 2; -- Code for choice 'a'
+        WHEN 'i' THEN
+            SET status_code = 3; -- Code for choice 'i'
+        ELSE
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid choice letter';
+    END CASE;
+
+    IF p_choice_letter = 'c' THEN
+        -- Check if application exists
+        IF EXISTS (
+                SELECT 1
+                FROM applies
+                WHERE cand_username = p_username
+                  AND job_id = p_job_id
+                  AND status = 'ACTIVE'
+            ) THEN
+            -- Update the status to CANCELED
+            UPDATE applies
+            SET status = 'CANCELED'
+            WHERE cand_username = p_username AND job_id = p_job_id;
+
+            SELECT 'Status updated to CANCELED' AS result;
+        ELSE
+            -- Check if the application is already CANCELED
+            IF EXISTS (
+                    SELECT 1
+                    FROM applies
+                    WHERE cand_username = p_username
+                      AND job_id = p_job_id
+                      AND status = 'CANCELED'
+                ) THEN
+                SELECT 'Application is already CANCELED' AS result;
+            ELSE
+                SELECT 'No application found for that job' AS result;
+            END IF;
+        END IF;
+    END IF;
+
+    IF p_choice_letter = 'a' THEN
+        -- Check if application exists
+        IF EXISTS (
+                SELECT 1
+                FROM applies
+                WHERE cand_username = p_username
+                  AND job_id = p_job_id
+            ) THEN
+            -- Check the status and update accordingly
+            IF EXISTS (
+                    SELECT 1
+                    FROM applies
+                    WHERE cand_username = p_username
+                      AND job_id = p_job_id
+                      AND status = 'CANCELED'
+                ) THEN
+                -- Update the status to ACTIVE
+                UPDATE applies
+                SET status = 'ACTIVE'
+                WHERE cand_username = p_username AND job_id = p_job_id;
+
+                SELECT 'Status updated to ACTIVE' AS result;
+            ELSE
+                -- Check if there is an active application
+                IF EXISTS (
+                        SELECT 1
+                        FROM applies
+                        WHERE cand_username = p_username
+                          AND job_id = p_job_id
+                          AND status = 'ACTIVE'
+                    ) THEN
+                    SELECT 'You have an active application' AS result;
+                ELSE
+                    SELECT 'No application found for that job' AS result;
+                END IF;
+            END IF;
+        ELSE
+            SELECT 'No application found' AS result;
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+-- Create a function to get the current username
+DELIMITER //
+CREATE FUNCTION getCurrentUsername() RETURNS VARCHAR(30) DETERMINISTIC
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SELECT dba_username INTO current_username
+    FROM dba
+    WHERE start_date <= CURDATE() AND (end_date >= CURDATE() OR end_date IS NULL)
+    ORDER BY start_date DESC
+    LIMIT 1;
+    RETURN COALESCE(current_username, 'unauthorized');
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER applies_insert_trigger
+AFTER INSERT ON applies
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('INSERT', 'applies', NOW(), current_username, CURDATE());
+END;
+
+//
+
+-- Assuming the primary key for the applies table is 'id'
+DELIMITER //
+CREATE TRIGGER applies_update_trigger
+AFTER UPDATE ON applies
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('UPDATE', 'applies', NOW(), current_username, CURDATE());
+END;
+
+//
+
+-- Assuming the primary key for the applies table is 'id'
+DELIMITER //
+CREATE TRIGGER applies_delete_trigger
+AFTER DELETE ON applies
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('DELETE', 'applies', NOW(), current_username, CURDATE());
+END;
+
+//
+
+
+DELIMITER //
+CREATE TRIGGER job_insert_trigger
+AFTER INSERT ON job
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('INSERT', 'job', NOW(), current_username, CURDATE());
+END;
+
+//
+
+DELIMITER //
+CREATE TRIGGER job_update_trigger
+AFTER UPDATE ON job
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('UPDATE', 'job', NOW(), current_username, CURDATE());
+END;
+
+//
+
+-- Assuming the primary key for the job table is 'id'
+DELIMITER //
+CREATE TRIGGER job_delete_trigger
+AFTER DELETE ON job
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SET current_username = getCurrentUsername();
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('DELETE', 'job', NOW(), current_username, CURDATE());
+END;
+
+//
+
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER user_insert_trigger
+AFTER INSERT ON user
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SELECT dba_username INTO current_username
+    FROM dba
+    WHERE start_date <= CURDATE() AND (end_date >= CURDATE() OR end_date IS NULL)
+    ORDER BY start_date DESC
+    LIMIT 1;
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('INSERT', 'user', NOW(), current_username, CURDATE());
+END;
+//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER user_update_trigger
+AFTER UPDATE ON user
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SELECT dba_username INTO current_username
+    FROM dba
+    WHERE start_date <= CURDATE() AND (end_date >= CURDATE() OR end_date IS NULL)
+    ORDER BY start_date DESC
+    LIMIT 1;
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('UPDATE', 'user', NOW(), current_username, CURDATE());
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER user_delete_trigger
+AFTER DELETE ON user
+FOR EACH ROW
+BEGIN
+    DECLARE current_username VARCHAR(30);
+    SELECT dba_username INTO current_username
+    FROM dba
+    WHERE start_date <= CURDATE() AND (end_date >= CURDATE() OR end_date IS NULL)
+    ORDER BY start_date DESC
+    LIMIT 1;
+
+    INSERT INTO log (action_type, table_name, change_time, username, change_date)
+    VALUES ('DELETE', 'user', NOW(), current_username, CURDATE());
+END;
+//
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+/*SET @result = NULL;
+CALL bathmologish(.......(orismata eisodou) @result);
+SELECT @result;*/
+-- STO PROCEDURE 'BATHMOLOGISH' BAZEIS ORISMATA ENAN EVALUATOR ENAN EMPLOYEE KAI TO ID MIAS THESHS
+
+/*CALL grade_calc() DEN XREIAZETAI NA THN KALESEIS, KALEITAI MONH THS EITE APO THN BATHMOLOGISH, EITE APO THN WINNER*/
+
+/*CALL winner(10001);BAZEIS SAN ORISMA TO ID THS THESHS POY THES NA BGALEI NIKHTH*/
+
+/*CALL history_ins() XWRIS ORISMA. PANTA PANTA PANTA TELEYTAIA, KATHWS SBHNEI EGGRAFES APO TON PINAKA APP_PROCESS*/
+
+/*CALL winner(10001);
+select * FROM applies;
+select * FROM app_process;
+CALL history_ins();
+select * FROM app_history;
+select * FROM app_process;*/
+CALL winner(1000000001);
+CALL history_ins();
+-- CALL history_ins();
+
+
+
+select * FROM app_history;
+
+
+
+
+
+--To check the code: 3.1.2.4
+--DELETE FROM job WHERE id = '';
+--SELECT * FROM log;
+
+--INSERT INTO dba (dba_username, start_date) VALUES ('DBACHIEF', '2024-01-01');
+--DELETE FROM job WHERE id = '';
+--SELECT * FROM log;
+
+-- to check CALL UpdateEmployeeJobStatus('SherlockHolmes', 1000000001, 'a');
+-- to ckeck CALL UpdateEmployeeJobStatus('JamesBond', 1000000003, 'c');
+
+
+
+
+
+DECLARE app_start_date DATE;
+    DECLARE diff_days INT;
+    DECLARE num_active_apps INT;
+
+
+    SELECT start_date INTO app_start_date
+    FROM job
+    WHERE id = NEW.job_id;
+
+
+    SET diff_days = DATEDIFF(app_start_date, CURDATE());
+
+    IF NEW.status = 'CANCELED' AND diff_days < 10 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid start date for CANCELED status';
+    END IF;
+
+    IF NEW.status = 'ACTIVE' AND diff_days < 15 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid start date for ACTIVE status (must be 15 or more days in the past)';
+    END IF;
+
+    IF NEW.status = 'ACTIVE' THEN
+
+        SELECT COUNT(DISTINCT job_id)
+        INTO num_active_apps
+        FROM applies
+        WHERE cand_username = NEW.cand_username AND status = 'ACTIVE';
+
+        IF num_active_apps >= 3 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Too many active applications for this candidate';
+        END IF;
+    END IF;
